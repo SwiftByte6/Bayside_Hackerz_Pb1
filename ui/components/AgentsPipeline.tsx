@@ -9,7 +9,7 @@ import {
     BarChart2, Wrench, FlaskConical, FileText,
     CheckCircle, Loader, Clock, Copy, Check, Zap, TrendingUp,
 } from 'lucide-react';
-import { ScanReport, PipelineResult, runAgentStep } from '@/lib/api';
+import { ScanReport, PipelineResult, runAgentStep, sendChatMessage } from '@/lib/api';
 
 // ── Agents ─────────────────────────────────────────────────────────────────────
 const AGENTS = [
@@ -95,8 +95,41 @@ export default function AgentsPipeline({ report, onComplete }: { report: ScanRep
     const [ollamaBase, setOllamaBase] = useState('http://localhost:11434/v1');
     const [activePanel, setActivePanel] = useState<string | null>(null);
 
+    // ── Inline Chat state ──────────────────────────────────────────────────────
+    const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
+    const [chatInput, setChatInput] = useState('');
+    const [chatLoading, setChatLoading] = useState(false);
+
     const canRun = provider === 'ollama' ? true : openaiKey.trim().length > 0;
     const effectiveModel = customModel.trim() || ollamaModel;
+
+    // ── Send a message in the inline chat ─────────────────────────────────────
+    const handleChatSend = async () => {
+        if (!chatInput.trim() || chatLoading) return;
+        const userMsg = chatInput.trim();
+        setChatInput('');
+        const newMsgs = [...chatMessages, { role: 'user' as const, content: userMsg }];
+        setChatMessages(newMsgs);
+        setChatLoading(true);
+        // Also mirror the message into the custom prompt for the pipeline
+        setCustomPrompt(userMsg);
+        try {
+            const chatModel = effectiveModel || 'qwen2.5-coder:3b';
+            const reply = await sendChatMessage(
+                newMsgs,
+                { repoName: report.repoName, score: report.score, summary: report.summary },
+                provider,
+                chatModel,
+                ollamaBase,
+                provider === 'openai' ? openaiKey : ''
+            );
+            setChatMessages([...newMsgs, { role: 'assistant', content: reply }]);
+        } catch (err: any) {
+            setChatMessages([...newMsgs, { role: 'assistant', content: `**Error:** ${err.message}` }]);
+        } finally {
+            setChatLoading(false);
+        }
+    };
 
     const handleRun = async () => {
         setRunning(true);
@@ -295,26 +328,68 @@ export default function AgentsPipeline({ report, onComplete }: { report: ScanRep
                     </motion.div>
                 )}
 
-                {/* Custom Prompt */}
+                {/* Custom Prompt / Inline Chat */}
                 <div style={{ marginTop: 16 }}>
-                    <label style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                        <span>
-                            Custom Prompt <span style={{ fontWeight: 400, textTransform: 'none' }}>(optional)</span>
-                        </span>
+                    <label style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                        💬 Chat with AI about your code
+                        <span style={{ fontWeight: 400, textTransform: 'none', color: 'var(--text-muted)' }}>(use it to set custom context)</span>
                     </label>
-                    <textarea
-                        value={customPrompt}
-                        onChange={e => setCustomPrompt(e.target.value)}
-                        placeholder="e.g. 'Focus only on fixing Python files', 'Make the final report strictly formatted for SOC2', 'Explain fixes like I am 5'..."
-                        style={{
-                            width: '100%', minHeight: 60, padding: '10px 14px',
-                            background: 'var(--bg-secondary)', border: `1px solid ${customPrompt ? 'var(--border-cyan)' : 'var(--border)'}`,
-                            borderRadius: 8, color: 'var(--text-primary)', fontFamily: 'var(--font-sans)', fontSize: 13,
-                            outline: 'none', resize: 'vertical'
-                        }}
-                        onFocus={e => e.target.style.borderColor = 'var(--border-cyan)'}
-                        onBlur={e => e.target.style.borderColor = customPrompt ? 'var(--border-cyan)' : 'var(--border)'}
-                    />
+
+                    {/* Chat messages area */}
+                    <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+                        <div style={{ maxHeight: 220, overflowY: 'auto', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            {chatMessages.length === 0 && (
+                                <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text-muted)', fontSize: 12 }}>
+                                    Ask the AI about your code — your message also sets the custom context for the pipeline agents.
+                                </div>
+                            )}
+                            {chatMessages.map((msg, i) => (
+                                <div key={i} style={{ display: 'flex', gap: 8, flexDirection: msg.role === 'user' ? 'row-reverse' : 'row', alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '88%' }}>
+                                    <div style={{ width: 22, height: 22, borderRadius: 11, flexShrink: 0, background: msg.role === 'user' ? 'var(--cyan-dim)' : 'rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}>
+                                        {msg.role === 'user' ? '👤' : '🤖'}
+                                    </div>
+                                    <div style={{ padding: '7px 11px', borderRadius: 8, background: msg.role === 'user' ? 'var(--cyan-dim)' : 'var(--bg-primary)', border: `1px solid ${msg.role === 'user' ? 'var(--border-cyan)' : 'var(--border)'}`, color: msg.role === 'user' ? 'var(--cyan)' : 'var(--text-secondary)', fontSize: 12, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                                        {msg.content.split('**').map((part, idx) =>
+                                            idx % 2 === 1 ? <strong key={idx}>{part}</strong> : part
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                            {chatLoading && (
+                                <div style={{ display: 'flex', gap: 4, padding: '8px 14px', alignItems: 'center' }}>
+                                    <motion.div animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 0.5 }} style={{ width: 5, height: 5, borderRadius: 3, background: 'var(--cyan)' }} />
+                                    <motion.div animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 0.5, delay: 0.15 }} style={{ width: 5, height: 5, borderRadius: 3, background: 'var(--cyan)' }} />
+                                    <motion.div animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 0.5, delay: 0.3 }} style={{ width: 5, height: 5, borderRadius: 3, background: 'var(--cyan)' }} />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Input row */}
+                        <div style={{ borderTop: '1px solid var(--border)', display: 'flex', gap: 0, alignItems: 'stretch' }}>
+                            <input
+                                type="text"
+                                value={chatInput}
+                                onChange={e => setChatInput(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter') handleChatSend(); }}
+                                placeholder="Ask about your code or set a pipeline instruction... (Enter to send)"
+                                style={{ flex: 1, background: 'transparent', border: 'none', color: 'var(--text-primary)', padding: '10px 14px', fontSize: 13, outline: 'none' }}
+                            />
+                            <button
+                                onClick={handleChatSend}
+                                disabled={!chatInput.trim() || chatLoading}
+                                style={{ padding: '0 14px', background: chatInput.trim() && !chatLoading ? 'var(--cyan-dim)' : 'transparent', border: 'none', borderLeft: '1px solid var(--border)', color: chatInput.trim() && !chatLoading ? 'var(--cyan)' : 'var(--text-muted)', cursor: chatInput.trim() && !chatLoading ? 'pointer' : 'not-allowed', fontSize: 13, fontWeight: 700, transition: 'all 0.2s' }}
+                            >
+                                Send
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Show what's being passed as custom prompt */}
+                    {customPrompt && (
+                        <div style={{ marginTop: 6, fontSize: 11, color: 'var(--cyan)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ color: 'var(--text-muted)' }}>💡 Pipeline instruction:</span> {customPrompt.slice(0, 80)}{customPrompt.length > 80 ? '…' : ''}
+                        </div>
+                    )}
                 </div>
 
                 {/* Run button + error */}

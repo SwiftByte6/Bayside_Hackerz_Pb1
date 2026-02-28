@@ -14,6 +14,7 @@ import {
 import { ScanReport, Issue, FileBreakdown } from '@/lib/api';
 import { getReport as getStoredReport, setReport as setStoredReport, getRepoName } from '@/lib/store';
 import AgentsPipeline from '@/components/AgentsPipeline';
+import ChatBox from '@/components/ChatBox';
 
 type Persona = 'all' | 'dev' | 'security' | 'compliance';
 
@@ -638,6 +639,13 @@ export default function ResultsPage() {
                     )}
                 </AnimatePresence>
             </div>
+
+            {/* AI Chat Interface */}
+            <ChatBox reportSummary={{
+                repoName: report.repoName,
+                score: report.score,
+                summary: report.summary
+            }} />
         </main>
     );
 }

@@ -1,10 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, Send, X, Bot, User, Trash2 } from 'lucide-react';
+import { MessageSquare, Send, X, Bot, User, Trash2, Settings2 } from 'lucide-react';
 import { sendChatMessage } from '@/lib/api';
 
 export default function ChatBox({ reportSummary }: { reportSummary: any }) {
     const [isOpen, setIsOpen] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
+    const [provider, setProvider] = useState<'ollama' | 'openai'>('ollama');
+    const [model, setModel] = useState('qwen2.5-coder:3b');
+    const [apiKey, setApiKey] = useState('');
     const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -45,10 +49,10 @@ export default function ChatBox({ reportSummary }: { reportSummary: any }) {
             const reply = await sendChatMessage(
                 newMessages,
                 reportSummary,
-                'ollama', // You can hook this up to the parent's state later if you want dynamic provider
-                'claude-3.5-sonnet',
+                provider,
+                model,
                 'http://localhost:11434/v1',
-                ''
+                apiKey
             );
 
             setMessages([...newMessages, { role: 'assistant', content: reply }]);
@@ -129,6 +133,9 @@ export default function ChatBox({ reportSummary }: { reportSummary: any }) {
                                 </div>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <button onClick={() => setShowSettings(!showSettings)} style={{ background: 'none', border: 'none', color: showSettings ? 'var(--cyan)' : 'var(--text-muted)', cursor: 'pointer', padding: 4 }} title="Settings">
+                                    <Settings2 size={16} />
+                                </button>
                                 <button onClick={clearChat} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4 }} title="Clear Chat">
                                     <Trash2 size={16} />
                                 </button>
@@ -137,6 +144,56 @@ export default function ChatBox({ reportSummary }: { reportSummary: any }) {
                                 </button>
                             </div>
                         </div>
+
+                        {/* Settings Area */}
+                        <AnimatePresence>
+                            {showSettings && (
+                                <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    style={{ overflow: 'hidden', borderBottom: '1px solid var(--border)' }}
+                                >
+                                    <div style={{ padding: '12px 20px', background: 'var(--bg-secondary)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                        <div style={{ display: 'flex', gap: 10 }}>
+                                            <div style={{ flex: 1 }}>
+                                                <label style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Provider</label>
+                                                <select
+                                                    value={provider}
+                                                    onChange={e => setProvider(e.target.value as any)}
+                                                    style={{ width: '100%', padding: '6px', background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text-primary)', fontSize: 12 }}
+                                                >
+                                                    <option value="ollama">Ollama (Local)</option>
+                                                    <option value="openai">OpenAI</option>
+                                                </select>
+                                            </div>
+                                            <div style={{ flex: 1 }}>
+                                                <label style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Model</label>
+                                                <input
+                                                    type="text"
+                                                    value={model}
+                                                    onChange={e => setModel(e.target.value)}
+                                                    placeholder={provider === 'ollama' ? 'qwen2.5-coder:3b' : 'gpt-3.5-turbo'}
+                                                    style={{ width: '100%', padding: '6px', background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text-primary)', fontSize: 12 }}
+                                                />
+                                            </div>
+                                        </div>
+                                        {provider === 'openai' && (
+                                            <div>
+                                                <label style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase' }}>API Key</label>
+                                                <input
+                                                    type="password"
+                                                    value={apiKey}
+                                                    onChange={e => setApiKey(e.target.value)}
+                                                    placeholder="sk-..."
+                                                    style={{ width: '100%', padding: '6px', background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text-primary)', fontSize: 12 }}
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
 
                         {/* Messages Area */}
                         <div style={{

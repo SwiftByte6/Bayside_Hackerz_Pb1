@@ -31,7 +31,7 @@ const Button = ({ text, href, variant = "main" }) => {
   };
 
   return (
-    <Link href={href} style={{ ...baseStyles, ...variants[variant] }}>
+    <Link href={href} className="interactive-hover" style={{ ...baseStyles, ...variants[variant] }}>
       {text}
     </Link>
   );

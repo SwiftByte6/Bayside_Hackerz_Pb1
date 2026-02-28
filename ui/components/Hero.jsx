@@ -1,10 +1,41 @@
+"use client"
+
 import Image from 'next/image'
 import React from 'react'
 import Button from './Button'
+import { useRef } from 'react'
+import gsap from 'gsap'
+import { useGSAP } from '@gsap/react'
 
 const Hero = () => {
+  const heroRef = useRef(null)
+
+  useGSAP(
+    () => {
+      gsap.fromTo(
+        '.hero-blur-text',
+        {
+          opacity: 0,
+          filter: 'blur(14px)',
+          y: 24,
+        },
+        {
+          opacity: 1,
+          filter: 'blur(0px)',
+          y: 0,
+          duration: 1.1,
+          ease: 'power3.out',
+          stagger: 0.14,
+        }
+      )
+    },
+    { scope: heroRef }
+  )
+
   return (
     <div
+      ref={heroRef}
+      id="home"
       style={{
         height: '100vh',
         background: '#000000',
@@ -29,6 +60,7 @@ const Hero = () => {
         >
           {/* Badge */}
           <div
+            className="hero-blur-text"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -46,6 +78,7 @@ const Hero = () => {
           
           {/* Headline */}
           <h1
+            className="hero-blur-text"
             style={{
               fontSize: '3rem',
               fontWeight: 700,
@@ -71,6 +104,7 @@ const Hero = () => {
           
           {/* Subtitle */}
           <p
+            className="hero-blur-text"
             style={{
               color: '#9ca3af',
               fontSize: '1rem',
@@ -83,19 +117,7 @@ const Hero = () => {
             Scan your repository for secrets, vulnerable dependencies, LLM attack vectors, and compliance gaps in seconds.
           </p>
           
-          {/* CTA Buttons */}
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              marginTop: '16px',
-              gap: '16px',
-              justifyContent: 'center',
-            }}
-          >
-            <Button text="Run Free Audit" href="/upload" variant="main" />
-            <Button text="See Live Scan" href="/results" variant="hollow" />
-          </div>
+          
         </div>
         
         <Image

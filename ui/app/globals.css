@@ -228,3 +228,51 @@ body {
   background: var(--purple-dim);
   color: var(--purple);
 }
+
+/* Interactive hover system */
+button,
+a,
+input,
+textarea {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, filter 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+
+button:not(:disabled):hover,
+a:hover {
+  filter: brightness(1.06);
+}
+
+button:not(:disabled):active,
+a:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+input:hover,
+textarea:hover {
+  border-color: var(--border-purple);
+}
+
+input:focus,
+textarea:focus {
+  border-color: var(--border-active);
+  box-shadow: 0 0 0 2px var(--purple-dim);
+}
+
+.interactive-hover:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28);
+}
+
+.card-hover {
+  transition: transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 0 26px rgba(139, 92, 246, 0.28);
+  border-color: var(--border-active);
+}
+
+.nav-link-hover:hover {
+  color: #ffffff;
+}

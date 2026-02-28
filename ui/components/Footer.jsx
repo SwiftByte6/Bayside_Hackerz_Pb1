@@ -1,101 +1,177 @@
-import React from 'react';
-import Link from 'next/link';
+'use client'
 
-const Footer = () => {
-  const footerGroups = [
-    {
-      title: 'Product',
-      links: [
-        { label: 'Home', href: '/' },
-        { label: 'Results', href: '/results' },
-        { label: 'Pricing', href: '/#pricing' },
-      ],
+import React, { useEffect, useRef, useState } from 'react'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useGSAP } from '@gsap/react'
+import { FaInstagram, FaLinkedin, FaYoutube } from 'react-icons/fa'
+import { MdEmail } from 'react-icons/md'
+
+gsap.registerPlugin(ScrollTrigger)
+
+export default function Footer() {
+  const footerRef = useRef(null)
+  const contentRef = useRef(null)
+
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== 'undefined' ? window.innerWidth <= 768 : false
+  )
+
+  useEffect(() => {
+    const checkIsMobile = () => window.innerWidth <= 768
+    const handleResize = () => setIsMobile(checkIsMobile())
+
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  useGSAP(
+    () => {
+      if (isMobile) return
+
+      const trigger = ScrollTrigger.create({
+        trigger: footerRef.current,
+        start: 'top bottom',
+        end: 'bottom bottom',
+        scrub: true,
+        onUpdate: (self) => {
+          const progress = self.progress
+          gsap.set(contentRef.current, {
+            y: `${-45 * (1 - progress)}%`,
+          })
+        },
+      })
+
+      return () => {
+        trigger.kill()
+      }
     },
-    {
-      title: 'Security',
-      links: [
-        { label: 'Secret Scan', href: '/#scanner' },
-        { label: 'Dependency Audit', href: '/#scanner' },
-        { label: 'PII Check', href: '/#scanner' },
-      ],
-    },
-    {
-      title: 'Company',
-      links: [
-        { label: 'GitHub', href: 'https://github.com', external: true },
-        { label: 'Support', href: 'mailto:support@vibeaudit.dev', external: true },
-      ],
-    },
-  ];
+    { dependencies: [isMobile] }
+  )
 
   return (
-    <footer
-      style={{
-        borderTop: '1px solid rgba(255,255,255,0.12)',
-        background: 'rgba(10, 10, 20, 0.85)',
-        backdropFilter: 'blur(10px)',
-      }}
-    >
-      <div
-        style={{
-          maxWidth: '1200px',
-          margin: '0 auto',
-          padding: '32px 24px',
-          display: 'grid',
-          gridTemplateColumns: '1.2fr repeat(3, minmax(120px, 1fr))',
-          gap: '24px',
-        }}
-      >
-        <div>
-          <h3 style={{ color: '#ffffff', marginBottom: '8px', fontSize: '1rem' }}>Vibe-Audit</h3>
-          <p style={{ color: 'rgba(255,255,255,0.62)', fontSize: '0.9rem', lineHeight: 1.6 }}>
-            AI production readiness scanner for secrets, risky dependencies, prompt injection, and compliance risks.
-          </p>
-        </div>
+    <footer ref={footerRef} className="footer-root">
+      <div className="absolute inset-0 bg-black" />
 
-        {footerGroups.map((group) => (
-          <div key={group.title}>
-            <h4 style={{ color: '#ffffff', marginBottom: '10px', fontSize: '0.95rem' }}>{group.title}</h4>
-            <div style={{ display: 'grid', gap: '8px' }}>
-              {group.links.map((link) =>
-                link.external ? (
-                  <a
-                    key={link.label}
-                    href={link.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{ color: 'rgba(255,255,255,0.62)', fontSize: '0.88rem', textDecoration: 'none' }}
-                  >
-                    {link.label}
-                  </a>
-                ) : (
-                  <Link
-                    key={link.label}
-                    href={link.href}
-                    style={{ color: 'rgba(255,255,255,0.62)', fontSize: '0.88rem', textDecoration: 'none' }}
-                  >
-                    {link.label}
-                  </Link>
-                )
-              )}
+      <div
+        ref={contentRef}
+        className="footer-content"
+        style={{ transform: isMobile ? 'none' : 'translateY(-45%)' }}
+      >
+        <div className="footer-row">
+          <div>
+            <h2 className="title text-[3rem] md:text-[4rem]">VIBE-AUDIT</h2>
+            <p className="tag">AI Production Readiness Scanner</p>
+            <p className="meta">
+              Audit AI-generated repositories for secrets, <br />
+              vulnerable dependencies, prompt-injection risks, <br />
+              and PII / compliance gaps.
+            </p>
+          </div>
+
+          <div>
+            <h3>PRODUCT</h3>
+            <p>Secret Detection</p>
+            <p>Dependency Audit</p>
+            <p>PII / GDPR Scan</p>
+            <p>Prompt Injection Scan</p>
+          </div>
+
+          <div>
+            <h3>CONTACT</h3>
+            <p>Email: support@vibeaudit.dev</p>
+            <p>For product demos & onboarding</p>
+            <p>Response time: within 24 hours</p>
+            <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+              <a
+                href="https://instagram.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram"
+                  className="hover:opacity-100 transition-opacity interactive-hover"
+              >
+                <FaInstagram size={22} color="rgba(255,255,255,0.6)" />
+              </a>
+
+              <a
+                href="https://youtube.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="YouTube"
+                  className="hover:opacity-100 transition-opacity interactive-hover"
+              >
+                <FaYoutube size={26} color="rgba(255,255,255,0.6)" />
+              </a>
+
+              <a
+                href="https://linkedin.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="LinkedIn"
+                  className="hover:opacity-100 transition-opacity interactive-hover"
+              >
+                <FaLinkedin size={22} color="rgba(255,255,255,0.6)" />
+              </a>
+
+              <a href="mailto:support@vibeaudit.dev" aria-label="Email" className="hover:opacity-100 transition-opacity interactive-hover">
+                <MdEmail size={24} color="rgba(255,255,255,0.6)" />
+              </a>
             </div>
           </div>
-        ))}
+        </div>
+
+        <div className="footer-bottom">
+          <span>© 2026 Vibe-Audit. All rights reserved.</span>
+          <span>Built for secure AI-assisted development</span>
+        </div>
       </div>
 
-      <div
-        style={{
-          borderTop: '1px solid rgba(255,255,255,0.08)',
-          padding: '12px 24px 18px',
-          textAlign: 'center',
-          color: 'rgba(255,255,255,0.5)',
-          fontSize: '0.82rem',
-        }}
-      >
-        © {new Date().getFullYear()} Vibe-Audit. All rights reserved.
-      </div>
+      <style jsx>{`
+        .footer-root {
+          position: relative;
+          height: 75svh;
+          background: black;
+          color: white;
+          overflow: hidden;
+        }
+
+        .footer-content {
+          position: relative;
+          z-index: 3;
+          height: 100%;
+          padding: 2rem;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+        }
+
+        .footer-row {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+          gap: 2rem;
+        }
+
+        .title {
+          font-weight: 900;
+        }
+
+        .tag {
+          opacity: 0.8;
+        }
+
+        .meta {
+          opacity: 0.6;
+          font-size: 0.85rem;
+        }
+
+        .footer-bottom {
+          display: flex;
+          justify-content: space-between;
+          font-size: 0.75rem;
+          opacity: 0.6;
+        }
+      `}</style>
     </footer>
-  );
-};
-
-export default Footer;
+  )
+}

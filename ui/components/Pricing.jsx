@@ -1,4 +1,5 @@
 import React from 'react'
+import Link from 'next/link'
 import pricingData from '../data/pricingData'
 
 const Pricing = () => {
@@ -43,6 +44,7 @@ const Pricing = () => {
           {pricingData.plans.map((plan) => (
             <div
               key={plan.id}
+              className="card-hover"
               style={{
                 borderRadius: '18px',
                 border: plan.highlight ? '1px solid rgba(192, 132, 252, 0.8)' : '1px solid rgba(255,255,255,0.2)',
@@ -96,8 +98,9 @@ const Pricing = () => {
                 ))}
               </ul>
 
-              <button
-                type="button"
+              <Link
+                href={`/checkout?plan=${plan.id}`}
+                className="interactive-hover"
                 style={{
                   width: '100%',
                   border: plan.highlight ? '1px solid rgba(192,132,252,0.95)' : '1px solid rgba(255,255,255,0.2)',
@@ -110,10 +113,14 @@ const Pricing = () => {
                     ? 'linear-gradient(to right, rgba(124,58,237,0.95), rgba(192,132,252,0.95))'
                     : 'linear-gradient(to right, rgba(255,255,255,0.16), rgba(255,255,255,0.08))',
                   color: '#ffffff',
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}
               >
                 {plan.cta}
-              </button>
+              </Link>
             </div>
           ))}
         </div>

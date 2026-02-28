@@ -1,0 +1,344 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root {
+  /* Core colors */
+  --bg-primary: #080810;
+  --bg-secondary: #0d0d1a;
+  --bg-card: rgba(13, 13, 26, 0.8);
+  --bg-glass: rgba(255, 255, 255, 0.04);
+
+  /* Cyber accents */
+  --cyan: #00d9ff;
+  --cyan-dim: rgba(0, 217, 255, 0.15);
+  --cyan-glow: rgba(0, 217, 255, 0.4);
+  --purple: #7c3aed;
+  --purple-dim: rgba(124, 58, 237, 0.2);
+  --pink: #e040fb;
+  --pink-dim: rgba(224, 64, 251, 0.15);
+
+  /* Severity */
+  --danger: #ff2d55;
+  --danger-dim: rgba(255, 45, 85, 0.15);
+  --warning: #ff9500;
+  --warning-dim: rgba(255, 149, 0, 0.15);
+  --safe: #00e676;
+  --safe-dim: rgba(0, 230, 118, 0.15);
+  --medium: #ffd600;
+  --medium-dim: rgba(255, 214, 0, 0.15);
+
+  /* Text */
+  --text-primary: #f0f0ff;
+  --text-secondary: rgba(240, 240, 255, 0.6);
+  --text-muted: rgba(240, 240, 255, 0.35);
+
+  /* Borders */
+  --border: rgba(255, 255, 255, 0.08);
+  --border-cyan: rgba(0, 217, 255, 0.3);
+  --border-active: rgba(0, 217, 255, 0.6);
+
+  /* Fonts */
+  --font-sans: 'Space Grotesk', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Background grid pattern */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0, 217, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 217, 255, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Scanline overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.03) 2px,
+      rgba(0, 0, 0, 0.03) 4px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Glass card */
+.glass-card {
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.glass-card-active {
+  background: var(--bg-glass);
+  border: 1px solid var(--border-cyan);
+  border-radius: 16px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 0 20px var(--cyan-glow), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* Cyber button */
+.btn-cyber {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 28px;
+  background: linear-gradient(135deg, var(--cyan), #0084ff);
+  color: #000;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-cyber::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.btn-cyber:hover::before {
+  opacity: 1;
+}
+
+.btn-cyber:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 30px var(--cyan-glow);
+}
+
+.btn-cyber:active {
+  transform: translateY(0);
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--bg-glass);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-ghost:hover {
+  border-color: var(--border-cyan);
+  background: var(--cyan-dim);
+  color: var(--cyan);
+}
+
+/* Severity badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+}
+
+.badge-critical {
+  background: var(--danger-dim);
+  color: var(--danger);
+  border: 1px solid rgba(255, 45, 85, 0.3);
+}
+
+.badge-high {
+  background: var(--warning-dim);
+  color: var(--warning);
+  border: 1px solid rgba(255, 149, 0, 0.3);
+}
+
+.badge-medium {
+  background: var(--medium-dim);
+  color: var(--medium);
+  border: 1px solid rgba(255, 214, 0, 0.3);
+}
+
+.badge-low {
+  background: var(--safe-dim);
+  color: var(--safe);
+  border: 1px solid rgba(0, 230, 118, 0.3);
+}
+
+/* Neon text */
+.text-neon-cyan {
+  color: var(--cyan);
+  text-shadow: 0 0 20px var(--cyan-glow);
+}
+
+.text-neon-danger {
+  color: var(--danger);
+  text-shadow: 0 0 20px rgba(255, 45, 85, 0.5);
+}
+
+.text-neon-safe {
+  color: var(--safe);
+  text-shadow: 0 0 20px rgba(0, 230, 118, 0.5);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-cyan);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--cyan);
+}
+
+/* Mono font utility */
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* Glow utilities */
+.glow-cyan {
+  box-shadow: 0 0 30px var(--cyan-glow);
+}
+
+.glow-danger {
+  box-shadow: 0 0 30px rgba(255, 45, 85, 0.4);
+}
+
+.glow-safe {
+  box-shadow: 0 0 30px rgba(0, 230, 118, 0.4);
+}
+
+.glow-warning {
+  box-shadow: 0 0 30px rgba(255, 149, 0, 0.4);
+}
+
+/* Pulse animation */
+@keyframes pulse-cyan {
+
+  0%,
+  100% {
+    box-shadow: 0 0 10px var(--cyan-glow);
+  }
+
+  50% {
+    box-shadow: 0 0 30px var(--cyan-glow);
+  }
+}
+
+@keyframes scan-line {
+  0% {
+    transform: translateY(-100%);
+  }
+
+  100% {
+    transform: translateY(100vh);
+  }
+}
+
+@keyframes flicker {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  92% {
+    opacity: 1;
+  }
+
+  93% {
+    opacity: 0.4;
+  }
+
+  94% {
+    opacity: 1;
+  }
+
+  96% {
+    opacity: 0.7;
+  }
+
+  97% {
+    opacity: 1;
+  }
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-pulse-cyan {
+  animation: pulse-cyan 2s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Container */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}

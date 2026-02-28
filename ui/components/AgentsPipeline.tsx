@@ -414,42 +414,84 @@ export default function AgentsPipeline({ report, onComplete }: { report: ScanRep
                 )}
             </div>
 
-            {/* Agent Step Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 28 }}>
+            {/* Agent Step Cards — PNG avatars */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 28 }}>
                 {AGENTS.map(agent => {
                     const status = statuses[agent.id];
-                    const Icon = agent.icon;
+                    const avatarMap: Record<string, string> = {
+                        analytics: '/david.png',
+                        engineer: '/eva.png',
+                        testing: '/ben.png',
+                        report: '/austin.png',
+                    };
+                    const nameMap: Record<string, string> = {
+                        analytics: 'David', engineer: 'Eva', testing: 'Ben', report: 'Austin',
+                    };
+                    const roleMap: Record<string, string> = {
+                        analytics: 'Analytics Agent', engineer: 'Engineer Agent',
+                        testing: 'Testing Agent', report: 'Report Agent',
+                    };
                     return (
                         <motion.div
                             key={agent.id}
-                            whileHover={result ? { scale: 1.02 } : {}}
+                            whileHover="hover"
+                            initial="rest"
+                            animate="rest"
                             onClick={() => result && setActivePanel(activePanel === agent.id ? null : agent.id)}
                             style={{
-                                padding: 16, borderRadius: 12, cursor: result ? 'pointer' : 'default',
-                                background: status === 'done' ? 'rgba(0,230,118,0.06)' : status === 'running' ? `${agent.color}15` : status === 'error' ? 'rgba(255,45,85,0.06)' : 'var(--bg-glass)',
-                                border: `1px solid ${status === 'done' ? 'rgba(0,230,118,0.3)' : status === 'running' ? agent.color + '60' : status === 'error' ? 'rgba(255,45,85,0.3)' : 'var(--border)'}`,
-                                transition: 'all 0.3s',
-                                boxShadow: status === 'running' ? `0 0 20px ${agent.color}30` : 'none',
+                                position: 'relative', borderRadius: 16, overflow: 'hidden',
+                                cursor: result ? 'pointer' : 'default',
+                                aspectRatio: '3/4',
+                                border: `2px solid ${status === 'done' ? 'rgba(0,230,118,0.5)' : status === 'running' ? agent.color : status === 'error' ? '#ff2d55' : 'rgba(139,92,246,0.25)'}`,
+                                boxShadow: status === 'running' ? `0 0 24px ${agent.color}50` : status === 'done' ? '0 0 16px rgba(0,230,118,0.2)' : '0 0 20px rgba(0,0,0,0.5)',
+                                transition: 'box-shadow 0.3s, border-color 0.3s',
                             }}
                         >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-                                <div style={{ width: 36, height: 36, borderRadius: 8, background: `${agent.color}20`, border: `1px solid ${agent.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Icon size={18} color={agent.color} />
-                                </div>
+                            {/* Avatar image */}
+                            <img
+                                src={avatarMap[agent.id]}
+                                alt={nameMap[agent.id]}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block' }}
+                            />
+
+                            {/* Permanent top gradient for status badge */}
+                            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 56, background: 'linear-gradient(to bottom, rgba(0,0,0,0.65), transparent)', pointerEvents: 'none' }} />
+
+                            {/* Status icon — top right */}
+                            <div style={{ position: 'absolute', top: 10, right: 10, width: 28, height: 28, borderRadius: '50%', background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.12)' }}>
                                 {statusIcon(status, agent.color)}
                             </div>
-                            <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 2 }}>{agent.label}</div>
-                            <div style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.4 }}>{agent.desc}</div>
+
+                            {/* Running progress bar */}
                             {status === 'running' && (
                                 <motion.div initial={{ width: 0 }} animate={{ width: '100%' }} transition={{ duration: 2, ease: 'easeInOut', repeat: Infinity }}
-                                    style={{ height: 2, borderRadius: 1, background: `linear-gradient(90deg, transparent, ${agent.color})`, marginTop: 10 }}
-                                />
+                                    style={{ position: 'absolute', bottom: 0, left: 0, height: 3, background: `linear-gradient(90deg, transparent, ${agent.color})` }} />
                             )}
-                            {status === 'done' && result && (
-                                <div style={{ marginTop: 8, fontSize: 10, color: 'var(--cyan)', fontFamily: 'var(--font-mono)' }}>
-                                    {activePanel === agent.id ? '▲ Collapse' : '▼ View Output'}
-                                </div>
-                            )}
+
+                            {/* Hover overlay — name + role */}
+                            <motion.div
+                                variants={{ rest: { opacity: 0, y: 12 }, hover: { opacity: 1, y: 0 } }}
+                                transition={{ duration: 0.22 }}
+                                style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '28px 14px 14px', background: 'linear-gradient(to top, rgba(8,4,20,0.95) 60%, transparent)', pointerEvents: 'none' }}
+                            >
+                                <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', letterSpacing: '0.01em', lineHeight: 1.2 }}>{nameMap[agent.id]}</div>
+                                <div style={{ fontSize: 11, color: agent.color, fontFamily: 'JetBrains Mono', marginTop: 2, letterSpacing: '0.05em' }}>{roleMap[agent.id]}</div>
+                                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginTop: 4 }}>{agent.desc}</div>
+                                {status === 'done' && result && (
+                                    <div style={{ marginTop: 8, fontSize: 10, color: '#a78bfa', fontFamily: 'JetBrains Mono' }}>
+                                        {activePanel === agent.id ? '▲ Collapse' : '▼ View Output'}
+                                    </div>
+                                )}
+                            </motion.div>
+
+                            {/* Always-visible name strip at top (when not hovered) */}
+                            <motion.div
+                                variants={{ rest: { opacity: 1 }, hover: { opacity: 0 } }}
+                                transition={{ duration: 0.18 }}
+                                style={{ position: 'absolute', top: 10, left: 12, pointerEvents: 'none' }}
+                            >
+                                <div style={{ fontSize: 12, fontWeight: 700, color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>{nameMap[agent.id]}</div>
+                            </motion.div>
                         </motion.div>
                     );
                 })}

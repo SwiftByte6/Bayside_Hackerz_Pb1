@@ -12,7 +12,7 @@ import {
     BarChart, Bar, XAxis, YAxis, Tooltip as ReTooltip, Cell,
 } from 'recharts';
 import { ScanReport, Issue, FileBreakdown } from '@/lib/api';
-import { getReport as getStoredReport } from '@/lib/store';
+import { getReport as getStoredReport, setReport as setStoredReport, getRepoName } from '@/lib/store';
 import AgentsPipeline from '@/components/AgentsPipeline';
 
 type Persona = 'all' | 'dev' | 'security' | 'compliance';
@@ -630,7 +630,10 @@ export default function ResultsPage() {
 
                     {activeTab === 'agents' && (
                         <motion.div key="agents" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-                            <AgentsPipeline report={report} />
+                            <AgentsPipeline report={report} onComplete={(updatedReport) => {
+                                setReport(updatedReport);
+                                setStoredReport(updatedReport, getRepoName());
+                            }} />
                         </motion.div>
                     )}
                 </AnimatePresence>

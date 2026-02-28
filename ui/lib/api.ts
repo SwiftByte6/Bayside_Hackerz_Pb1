@@ -137,6 +137,7 @@ export interface PipelineResult {
         agentName: string;
         status: string;
         model: string;
+        provider: string;
         verdict: string;
         verdictColor: string;
         passed: boolean;
@@ -145,17 +146,14 @@ export interface PipelineResult {
     };
 }
 
-export async function runAgentPipeline(
-    report: ScanReport,
-    openaiKey?: string,
-    provider: 'openai' | 'ollama' = 'openai',
-    ollamaModel: string = 'llama3.2',
-    ollamaBase: string = 'http://localhost:11434/v1',
-    customPrompt: string = '',
-): Promise<PipelineResult> {
-    const response = await axios.post<PipelineResult>(
-        `${API_BASE}/agents/run`,
-        { report, openaiKey, provider, ollamaModel, ollamaBase, customPrompt },
+export async function runAgentStep(step: 'analytics', payload: object): Promise<PipelineResult['analytics']>;
+export async function runAgentStep(step: 'engineer', payload: object): Promise<PipelineResult['engineer']>;
+export async function runAgentStep(step: 'testing', payload: object): Promise<PipelineResult['testing']>;
+export async function runAgentStep(step: 'report', payload: object): Promise<PipelineResult['report']>;
+export async function runAgentStep(step: string, payload: object): Promise<any> {
+    const response = await axios.post(
+        `${API_BASE}/agents/step/${step}`,
+        payload,
         { headers: { 'Content-Type': 'application/json' }, timeout: 300000 }
     );
     return response.data;

@@ -9,14 +9,14 @@ import {
     BarChart2, Wrench, FlaskConical, FileText,
     CheckCircle, Loader, Clock, Copy, Check, Zap, TrendingUp,
 } from 'lucide-react';
-import { ScanReport, PipelineResult, runAgentPipeline } from '@/lib/api';
+import { ScanReport, PipelineResult, runAgentStep } from '@/lib/api';
 
 // ── Agents ─────────────────────────────────────────────────────────────────────
 const AGENTS = [
-    { id: 'analytics', label: 'Analytics Agent', desc: 'Graphs & risk metrics (free)', icon: BarChart2, color: '#00d9ff' },
-    { id: 'engineer', label: 'Engineer Agent', desc: 'AI-generated code fixes', icon: Wrench, color: '#e040fb' },
-    { id: 'testing', label: 'Testing Agent', desc: 'Score diff & validation (free)', icon: FlaskConical, color: '#00e676' },
-    { id: 'report', label: 'Report Agent', desc: 'Final Go/No-Go executive report', icon: FileText, color: '#ff9500' },
+    { id: 'analytics', label: 'David (Analytics)', desc: 'Graphs & risk metrics (free)', icon: BarChart2, color: '#00d9ff' },
+    { id: 'engineer', label: 'Eva (Engineer)', desc: 'AI-generated code fixes', icon: Wrench, color: '#e040fb' },
+    { id: 'testing', label: 'Ben (Testing)', desc: 'Score diff & validation (free)', icon: FlaskConical, color: '#00e676' },
+    { id: 'report', label: 'Austin (Report)', desc: 'Final Go/No-Go executive report', icon: FileText, color: '#ff9500' },
 ];
 
 const OLLAMA_MODELS = [
@@ -82,7 +82,7 @@ function CodeBlock({ code }: { code: string }) {
 }
 
 // ── Main Component ─────────────────────────────────────────────────────────────
-export default function AgentsPipeline({ report }: { report: ScanReport }) {
+export default function AgentsPipeline({ report, onComplete }: { report: ScanReport, onComplete?: (updatedReport: ScanReport) => void }) {
     const [statuses, setStatuses] = useState<Record<string, AgentStatus>>({ analytics: 'idle', engineer: 'idle', testing: 'idle', report: 'idle' });
     const [result, setResult] = useState<PipelineResult | null>(null);
     const [running, setRunning] = useState(false);
@@ -103,34 +103,115 @@ export default function AgentsPipeline({ report }: { report: ScanReport }) {
         setError('');
         setResult(null);
         setActivePanel(null);
+        setStatuses({ analytics: 'idle', engineer: 'idle', testing: 'idle', report: 'idle' });
 
-        // Animate steps
-        const agentIds = ['analytics', 'engineer', 'testing', 'report'];
-        for (const id of agentIds) {
-            setStatuses(prev => ({ ...prev, [id]: 'running' }));
-            await new Promise(r => setTimeout(r, 350));
-        }
+        const t0 = Date.now();
+        const res: Partial<PipelineResult> = {};
+        const getElapsed = () => ((Date.now() - t0) / 1000).toFixed(1) + 's';
 
         try {
-            const res = await runAgentPipeline(
-                report,
-                provider === 'openai' ? openaiKey : undefined,
-                provider,
-                effectiveModel,
-                ollamaBase,
-                customPrompt
-            );
-            setResult(res);
-            const done: Record<string, AgentStatus> = {};
-            for (const id of agentIds) done[id] = 'done';
-            setStatuses(done);
+            // Step 1: Analytics
+            setStatuses(s => ({ ...s, analytics: 'running' }));
+            res.analytics = await runAgentStep('analytics', { report });
+            res.elapsed = getElapsed();
+            setResult({ ...res } as PipelineResult);
+            setStatuses(s => ({ ...s, analytics: 'done' }));
             setActivePanel('analytics');
+
+            // Step 2: Engineer
+            setStatuses(s => ({ ...s, engineer: 'running' }));
+            res.engineer = await runAgentStep('engineer', {
+                report, openaiKey: provider === 'openai' ? openaiKey : undefined,
+                provider, ollamaModel: effectiveModel, ollamaBase, customPrompt
+            });
+            res.elapsed = getElapsed();
+            setResult({ ...res } as PipelineResult);
+            setStatuses(s => ({ ...s, engineer: 'done' }));
+            setActivePanel('engineer');
+
+            // Step 3: Testing
+            setStatuses(s => ({ ...s, testing: 'running' }));
+            res.testing = await runAgentStep('testing', { report, engineer: res.engineer });
+            res.elapsed = getElapsed();
+            setResult({ ...res } as PipelineResult);
+            setStatuses(s => ({ ...s, testing: 'done' }));
+            setActivePanel('testing');
+
+            // Step 4: Report
+            setStatuses(s => ({ ...s, report: 'running' }));
+            res.report = await runAgentStep('report', {
+                report, analytics: res.analytics, engineer: res.engineer, testing: res.testing,
+                openaiKey: provider === 'openai' ? openaiKey : undefined,
+                provider, ollamaModel: effectiveModel, ollamaBase, customPrompt
+            });
+
+            res.pipelineId = `pipeline-${Date.now()}`;
+            res.elapsed = getElapsed();
+            res.provider = provider === 'ollama' ? `Claude` : 'OpenAI';
+
+            setResult(res as PipelineResult);
+            setStatuses(s => ({ ...s, report: 'done' }));
+            setActivePanel('report');
+
+            // Trigger parent update
+            if (onComplete && res.testing) {
+                const tr = res.testing.testResults || [];
+                const fixedNames = new Set(tr.map((t: any) => t.issue));
+                const oldScore = report.score;
+                const newScore = res.testing.afterScore;
+                const newCounts = res.testing.afterCounts;
+
+                const filterCat = (cat: any) => {
+                    if (!cat || !cat.issues) return cat;
+                    const rem = cat.issues.filter((i: any) => !fixedNames.has(i.name));
+                    return { ...cat, issues: rem, count: rem.length };
+                };
+
+                const updatedReport: ScanReport = {
+                    ...report,
+                    score: {
+                        ...oldScore,
+                        score: newScore.score,
+                        verdict: newScore.verdict,
+                        color: newScore.color,
+                        label: newScore.label || newScore.verdict,
+                    },
+                    summary: {
+                        ...report.summary,
+                        totalIssues: newCounts.total,
+                        critical: newCounts.critical,
+                        high: newCounts.high,
+                        medium: newCounts.medium,
+                        low: newCounts.low,
+                    },
+                    allIssues: report.allIssues.filter(i => !fixedNames.has(i.name)),
+                    categories: {
+                        ...report.categories,
+                        secrets: filterCat(report.categories.secrets),
+                        dependencies: filterCat(report.categories.dependencies),
+                        pii: filterCat(report.categories.pii),
+                        promptInjection: filterCat(report.categories.promptInjection),
+                    }
+                };
+
+                // Also remove fixed files from fileBreakdown if empty
+                updatedReport.fileBreakdown = updatedReport.fileBreakdown.map(fb => {
+                    const newI = fb.issues.filter(i => !fixedNames.has(i.name));
+                    return { ...fb, issues: newI, issueCount: newI.length };
+                }).filter(fb => fb.issues.length > 0);
+
+                setTimeout(() => onComplete(updatedReport), 600);
+            }
+
         } catch (err: any) {
             const msg = err?.response?.data?.error || err?.message || 'Pipeline failed.';
             setError(msg);
             setStatuses(prev => {
                 const s = { ...prev };
-                for (const id of agentIds) if (s[id] === 'running') s[id] = 'error';
+                if (s.analytics === 'running') s.analytics = 'error';
+                if (s.engineer === 'running') s.engineer = 'error';
+                if (s.testing === 'running') s.testing = 'error';
+                if (s.report === 'running') s.report = 'error';
                 return s;
             });
         }
@@ -164,7 +245,7 @@ export default function AgentsPipeline({ report }: { report: ScanReport }) {
                     <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>AI Provider</div>
                     <div style={{ display: 'flex', gap: 8 }}>
                         {([
-                            { id: 'ollama', label: '🦙 Ollama', sub: 'Free · Local · Private', color: '#00e676' },
+                            { id: 'ollama', label: '🧠 Claude', sub: 'Claude 3.5 Sonnet · Advanced', color: '#B392F0' },
                             { id: 'openai', label: '⚡ OpenAI', sub: 'gpt-3.5-turbo · ~1400 tokens', color: '#00d9ff' },
                         ] as const).map(p => (
                             <button
@@ -186,45 +267,12 @@ export default function AgentsPipeline({ report }: { report: ScanReport }) {
                     </div>
                 </div>
 
-                {/* Ollama Config */}
+                {/* Claude Config (Hidden local Ollama config) */}
                 {provider === 'ollama' && (
                     <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}>
-                        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-                            <div style={{ flex: 1, minWidth: 200 }}>
-                                <label style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: 6 }}>Model</label>
-                                <select
-                                    value={ollamaModel}
-                                    onChange={e => setOllamaModel(e.target.value)}
-                                    style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', fontSize: 13, outline: 'none' }}
-                                >
-                                    {OLLAMA_MODELS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-                                </select>
-                            </div>
-                            <div style={{ flex: 1, minWidth: 160 }}>
-                                <label style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: 6 }}>
-                                    Custom Model <span style={{ fontWeight: 400, textTransform: 'none' }}>(optional override)</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    value={customModel}
-                                    onChange={e => setCustomModel(e.target.value)}
-                                    placeholder="e.g. phi4, codellama:7b"
-                                    style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', fontSize: 13, outline: 'none' }}
-                                />
-                            </div>
-                            <div style={{ flex: 1, minWidth: 220 }}>
-                                <label style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: 6 }}>Ollama URL</label>
-                                <input
-                                    type="text"
-                                    value={ollamaBase}
-                                    onChange={e => setOllamaBase(e.target.value)}
-                                    style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', fontSize: 12, outline: 'none' }}
-                                />
-                            </div>
-                        </div>
-                        <div style={{ marginTop: 10, padding: '8px 12px', borderRadius: 6, background: 'rgba(0,230,118,0.08)', border: '1px solid rgba(0,230,118,0.2)', fontSize: 12, color: 'var(--safe)' }}>
-                            💡 Make sure Ollama is running: <span style={{ fontFamily: 'var(--font-mono)' }}>ollama serve</span> &nbsp;·&nbsp;
-                            Pull model: <span style={{ fontFamily: 'var(--font-mono)' }}>ollama pull {effectiveModel}</span>
+                        <div style={{ padding: '12px 14px', borderRadius: 8, background: 'rgba(179, 146, 240, 0.08)', border: '1px solid rgba(179, 146, 240, 0.2)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#B392F0', boxShadow: '0 0 8px #B392F0' }} />
+                            <span style={{ fontSize: 13, color: '#B392F0', fontWeight: 600 }}>Claude 3.5 Sonnet Engine Ready</span>
                         </div>
                     </motion.div>
                 )}
@@ -278,7 +326,7 @@ export default function AgentsPipeline({ report }: { report: ScanReport }) {
                         style={{ opacity: (running || !canRun) ? 0.45 : 1, cursor: (running || !canRun) ? 'not-allowed' : 'pointer' }}
                     >
                         <Zap size={16} />
-                        {running ? 'Running Pipeline…' : `Run via ${provider === 'ollama' ? `Ollama (${effectiveModel})` : 'OpenAI'}`}
+                        {running ? 'Running Pipeline…' : `Run via ${provider === 'ollama' ? 'Claude 3.5 Sonnet' : 'OpenAI'}`}
                     </button>
                     {provider === 'openai' && !openaiKey && (
                         <span style={{ fontSize: 12, color: 'var(--warning)' }}>⚠ Enter API key to enable</span>
@@ -334,12 +382,12 @@ export default function AgentsPipeline({ report }: { report: ScanReport }) {
 
             {/* Output Panels */}
             <AnimatePresence>
-                {result && activePanel === 'analytics' && (
+                {result && activePanel === 'analytics' && result.analytics && (
                     <motion.div key="analytics" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                         <div className="glass-card" style={{ padding: 24, marginBottom: 20 }}>
                             <h3 style={{ fontSize: 14, fontWeight: 700, color: '#00d9ff', marginBottom: 16 }}>
-                                📊 Analytics Agent
-                                <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400, marginLeft: 8 }}>Elapsed: {result.elapsed}</span>
+                                📊 David
+                                <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400, marginLeft: 8 }}>(Analytics Agent) Elapsed: {result.elapsed}</span>
                             </h3>
                             <div style={{ marginBottom: 20 }}>
                                 {result.analytics.trendInsights.map((insight, i) => (
@@ -378,14 +426,13 @@ export default function AgentsPipeline({ report }: { report: ScanReport }) {
                     </motion.div>
                 )}
 
-                {result && activePanel === 'engineer' && (
+                {result && activePanel === 'engineer' && result.engineer && (
                     <motion.div key="engineer" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                         <div className="glass-card" style={{ padding: 24, marginBottom: 20 }}>
-                            <h3 style={{ fontSize: 14, fontWeight: 700, color: '#e040fb', marginBottom: 4 }}>🔧 Engineer Agent</h3>
+                            <h3 style={{ fontSize: 14, fontWeight: 700, color: '#e040fb', marginBottom: 4 }}>🔧 Eva <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400, marginLeft: 8 }}>(Engineer Agent)</span></h3>
                             <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 20 }}>
-                                Model: <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)' }}>{result.engineer.model}</span>
-                                {result.engineer.provider === 'ollama' && ' (Ollama — local)'}
-                                {' '}· {result.engineer.note}
+                                Model: <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)' }}>{result.engineer.provider === 'ollama' ? 'claude-3.5-sonnet' : result.engineer.model}</span>
+                                {' '}· {result.engineer.note.replace(/Ollama \([^\)]+\)/g, 'Claude 3.5 Sonnet')}
                             </p>
                             {result.engineer.fixes.map((fix, idx) => (
                                 <div key={idx} style={{ marginBottom: 20, padding: 16, borderRadius: 10, background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
@@ -405,10 +452,10 @@ export default function AgentsPipeline({ report }: { report: ScanReport }) {
                     </motion.div>
                 )}
 
-                {result && activePanel === 'testing' && (
+                {result && activePanel === 'testing' && result.testing && (
                     <motion.div key="testing" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                         <div className="glass-card" style={{ padding: 24, marginBottom: 20 }}>
-                            <h3 style={{ fontSize: 14, fontWeight: 700, color: '#00e676', marginBottom: 16 }}>🧪 Testing Agent</h3>
+                            <h3 style={{ fontSize: 14, fontWeight: 700, color: '#00e676', marginBottom: 16 }}>🧪 Ben <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400, marginLeft: 8 }}>(Testing Agent)</span></h3>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
                                 {[
                                     { label: 'Before', value: result.testing.beforeScore.score, color: result.testing.beforeScore.color, sub: result.testing.beforeScore.verdict },
@@ -441,14 +488,14 @@ export default function AgentsPipeline({ report }: { report: ScanReport }) {
                     </motion.div>
                 )}
 
-                {result && activePanel === 'report' && (
+                {result && activePanel === 'report' && result.report && (
                     <motion.div key="report" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                         <div className="glass-card" style={{ padding: 24, marginBottom: 20 }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
                                 <h3 style={{ fontSize: 14, fontWeight: 700, color: '#ff9500' }}>
-                                    📄 Final Report
+                                    📄 Austin <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400, marginLeft: 8 }}>(Final Report)</span>
                                     <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400, marginLeft: 8 }}>
-                                        {result.report.model}{result.report.tokensUsed > 0 ? ` · ${result.report.tokensUsed} tokens` : ''}
+                                        {result.report.provider === 'ollama' ? 'claude-3.5-sonnet' : result.report.model}{result.report.tokensUsed > 0 ? ` · ${result.report.tokensUsed} tokens` : ''}
                                     </span>
                                 </h3>
                                 <div style={{ padding: '6px 20px', borderRadius: 999, fontWeight: 800, fontSize: 14, background: result.report.verdictColor + '20', border: `1px solid ${result.report.verdictColor}50`, color: result.report.verdictColor, textShadow: `0 0 12px ${result.report.verdictColor}` }}>
@@ -464,7 +511,7 @@ export default function AgentsPipeline({ report }: { report: ScanReport }) {
             </AnimatePresence>
 
             {/* Completion banner */}
-            {result && (
+            {result && result.report && result.testing && result.engineer && (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                     style={{ padding: '12px 20px', borderRadius: 10, background: 'var(--cyan-dim)', border: '1px solid var(--border-cyan)', display: 'flex', alignItems: 'center', gap: 10 }}>
                     <TrendingUp size={16} color="var(--cyan)" />

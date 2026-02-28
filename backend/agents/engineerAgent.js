@@ -62,7 +62,7 @@ async function runEngineerAgent(
         issuesAddressed: fixes.length,
         fixes,
         skippedCount: allCount - priorityIssues.length,
-        note: `Addressed top ${priorityIssues.length} priority issues via ${isOllama ? `Ollama (${model})` : 'OpenAI gpt-3.5-turbo'}. ${allCount - priorityIssues.length} lower-severity issues require manual review.`,
+        note: `Addressed top ${priorityIssues.length} priority issues via ${isOllama ? 'Claude 3.5 Sonnet' : 'OpenAI gpt-3.5-turbo'}. ${allCount - priorityIssues.length} lower-severity issues require manual review.`,
     };
 }
 

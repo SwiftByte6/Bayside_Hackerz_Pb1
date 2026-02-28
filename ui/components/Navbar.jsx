@@ -120,27 +120,28 @@ const Navbar = () => {
   return (
     <nav style={{
       position: 'fixed',
-      top: 0,
+      top: 44,
       left: 0,
       right: 0,
       zIndex: 50,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      padding: '16px 32px',
+      padding: '12px 32px',
       backgroundColor: 'transparent',
     }}>
       {/* Logo */}
       <Link href="/" className="nav-link-hover" style={{
-        color: 'white',
-        fontSize: '20px',
-        fontWeight: 600,
-        letterSpacing: '0.05em',
-        textDecoration: 'none',
+        display: 'flex', alignItems: 'center', gap: 8,
+        color: 'white', fontSize: '18px', fontWeight: 700,
+        letterSpacing: '0.04em', textDecoration: 'none',
       }}>
-        Vibefy
+        <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg,#7c3aed,#4c1d95)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 14px rgba(139,92,246,0.5)' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </div>
+        VibeAudit
       </Link>
-      
+
       {/* Nav Items */}
       <div style={{
         display: 'flex',
@@ -198,6 +199,7 @@ const Navbar = () => {
         ))}
       </div>
     </nav>
+
   )
 }
 

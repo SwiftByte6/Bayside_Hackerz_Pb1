@@ -162,13 +162,27 @@ body {
 
 /* Animations */
 @keyframes pulse-purple {
-  0%, 100% { box-shadow: 0 0 10px var(--purple-glow); }
-  50% { box-shadow: 0 0 30px var(--purple-glow); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 10px var(--purple-glow);
+  }
+
+  50% {
+    box-shadow: 0 0 30px var(--purple-glow);
+  }
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
 }
 
 .animate-pulse-purple {
@@ -275,4 +289,215 @@ textarea:focus {
 
 .nav-link-hover:hover {
   color: #ffffff;
+}
+
+/* ── Wondermakers-style: Custom cursor suppression ── */
+* {
+  cursor: none !important;
+}
+
+/* ── Button fill-on-hover (liquid fill from left) ── */
+.btn-fill {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  z-index: 0;
+  transition: color 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+}
+
+.btn-fill::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #ffffff;
+  transform: translateX(-101%);
+  transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: -1;
+}
+
+.btn-fill:hover::before {
+  transform: translateX(0);
+}
+
+.btn-fill:hover {
+  color: #000000;
+  border-color: #ffffff;
+  box-shadow: 0 0 32px rgba(255, 255, 255, 0.15);
+}
+
+/* ── Purple fill variant ── */
+.btn-fill-purple {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background: transparent;
+  border: 1px solid rgba(139, 92, 246, 0.45);
+  color: #c4b5fd;
+  z-index: 0;
+  transition: color 0.35s ease;
+}
+
+.btn-fill-purple::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  transform: translateX(-101%);
+  transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: -1;
+}
+
+.btn-fill-purple:hover::before {
+  transform: translateX(0);
+}
+
+.btn-fill-purple:hover {
+  color: #ffffff;
+}
+
+/* ── Scroll-triggered feature pill ── */
+.feature-pill {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.feature-pill.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Audio visualizer bars ── */
+@keyframes bar1 {
+
+  0%,
+  100% {
+    height: 6px
+  }
+
+  50% {
+    height: 18px
+  }
+}
+
+@keyframes bar2 {
+
+  0%,
+  100% {
+    height: 14px
+  }
+
+  50% {
+    height: 6px
+  }
+}
+
+@keyframes bar3 {
+
+  0%,
+  100% {
+    height: 8px
+  }
+
+  50% {
+    height: 20px
+  }
+}
+
+@keyframes bar4 {
+
+  0%,
+  100% {
+    height: 16px
+  }
+
+  50% {
+    height: 4px
+  }
+}
+
+.audio-bar-1 {
+  animation: bar1 0.7s ease-in-out infinite;
+}
+
+.audio-bar-2 {
+  animation: bar2 0.9s ease-in-out infinite;
+}
+
+.audio-bar-3 {
+  animation: bar3 0.6s ease-in-out infinite;
+}
+
+.audio-bar-4 {
+  animation: bar4 0.8s ease-in-out infinite;
+}
+
+/* ── Online pulsing dot ── */
+@keyframes onlinePulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 230, 118, 0.5);
+  }
+
+  50% {
+    box-shadow: 0 0 0 6px rgba(0, 230, 118, 0);
+  }
+}
+
+.online-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #00e676;
+  animation: onlinePulse 1.6s ease-out infinite;
+  display: inline-block;
+}
+
+/* ── Stagger reveal for letter-by-letter ── */
+@keyframes letterReveal {
+  from {
+    opacity: 0;
+    filter: blur(8px);
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+.letter-stagger span {
+  display: inline-block;
+  opacity: 0;
+  animation: letterReveal 0.5s ease forwards;
+}
+
+/* ── Scan pill sweep ── */
+@keyframes scanline {
+  0% {
+    left: -60%;
+  }
+
+  100% {
+    left: 140%;
+  }
+}
+
+/* ── Upload zone ping ring ── */
+@keyframes ripple {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
 }

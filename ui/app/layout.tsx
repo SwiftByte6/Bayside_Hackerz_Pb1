@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import CustomCursor from '@/components/CustomCursor';
+import SecurityTicker from '@/components/SecurityTicker';
 
 export const metadata: Metadata = {
   title: 'Vibe-Audit | AI Production Readiness Scanner',
@@ -17,8 +19,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <CustomCursor />
         <Navbar />
         <div style={{ position: 'relative', zIndex: 1, flex: 1 }}>
+          <SecurityTicker />
           {children}
         </div>
         <Footer />

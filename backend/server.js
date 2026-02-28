@@ -5,6 +5,7 @@ const fs = require('fs-extra');
 require('dotenv').config();
 
 const scanRouter = require('./routes/scan');
+const agentsRouter = require('./routes/agents');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -19,20 +20,21 @@ fs.ensureDirSync(path.join(__dirname, 'tmp'));
 
 // Routes
 app.use('/api', scanRouter);
+app.use('/api/agents', agentsRouter);
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', service: 'vibe-audit-backend', version: '1.0.0' });
+    res.json({ status: 'ok', service: 'vibe-audit-backend', version: '1.0.0' });
 });
 
 // Error handler
 app.use((err, req, res, next) => {
-  console.error('[ERROR]', err.message);
-  res.status(500).json({ error: err.message || 'Internal server error' });
+    console.error('[ERROR]', err.message);
+    res.status(500).json({ error: err.message || 'Internal server error' });
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Vibe-Audit Backend running at http://localhost:${PORT}`);
+    console.log(`🚀 Vibe-Audit Backend running at http://localhost:${PORT}`);
 });
 
 module.exports = app;

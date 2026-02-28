@@ -13,6 +13,7 @@ import {
 } from 'recharts';
 import { ScanReport, Issue, FileBreakdown } from '@/lib/api';
 import { getReport as getStoredReport } from '@/lib/store';
+import AgentsPipeline from '@/components/AgentsPipeline';
 
 type Persona = 'all' | 'dev' | 'security' | 'compliance';
 
@@ -307,7 +308,7 @@ export default function ResultsPage() {
     const router = useRouter();
     const [report, setReport] = useState<ScanReport | null>(null);
     const [persona, setPersona] = useState<Persona>('all');
-    const [activeTab, setActiveTab] = useState<'overview' | 'files' | 'issues' | 'remedy'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'files' | 'issues' | 'remedy' | 'agents'>('overview');
 
     useEffect(() => {
         const stored = getStoredReport();
@@ -358,6 +359,7 @@ export default function ResultsPage() {
         { id: 'files', label: 'File Heatmap' },
         { id: 'issues', label: `Issues (${sortedIssues.length})` },
         { id: 'remedy', label: 'Remediation' },
+        { id: 'agents', label: '🤖 AI Agents' },
     ];
 
     return (
@@ -623,6 +625,12 @@ export default function ResultsPage() {
                                     ))}
                                 </div>
                             </div>
+                        </motion.div>
+                    )}
+
+                    {activeTab === 'agents' && (
+                        <motion.div key="agents" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                            <AgentsPipeline report={report} />
                         </motion.div>
                     )}
                 </AnimatePresence>

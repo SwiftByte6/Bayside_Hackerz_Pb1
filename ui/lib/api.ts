@@ -70,13 +70,11 @@ export interface FileBreakdown {
 export async function scanZip(file: File, onProgress?: (phase: string) => void): Promise<ScanReport> {
     const formData = new FormData();
     formData.append('repo', file);
-
     onProgress?.('Uploading repository...');
     const response = await axios.post<ScanReport>(`${API_BASE}/scan`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         timeout: 120000,
     });
-
     return response.data;
 }
 
@@ -86,6 +84,79 @@ export async function scanGitHub(repoUrl: string, onProgress?: (phase: string) =
         headers: { 'Content-Type': 'application/json' },
         timeout: 120000,
     });
+    return response.data;
+}
 
+export interface PipelineResult {
+    pipelineId: string;
+    elapsed: string;
+    provider: string;
+    analytics: {
+        agentName: string;
+        status: string;
+        fileRiskScores: Array<{ file: string; riskScore: number; riskLevel: string; issueCount: number }>;
+        severityDistribution: Array<{ name: string; value: number; color: string; percentage: string }>;
+        categoryBreakdown: Array<{ name: string; count: number; score: number; color: string }>;
+        topRiskyFiles: Array<{ file: string; riskScore: number; riskLevel: string; issueCount: number }>;
+        issueFrequencyChart: Array<{ name: string; count: number }>;
+        trendInsights: string[];
+        meta: { totalFiles: number; affectedFiles: number; criticalRatio: string; overallScore: number };
+    };
+    engineer: {
+        agentName: string;
+        status: string;
+        model: string;
+        provider: string;
+        issuesAddressed: number;
+        fixes: Array<{
+            issue: { name: string; severity: string; file: string; line: number | null; snippet: string };
+            fix: { fixedCode: string; explanation: string; diffSummary: string };
+            tokensUsed: number;
+        }>;
+        skippedCount: number;
+        note: string;
+    };
+    testing: {
+        agentName: string;
+        status: string;
+        beforeScore: { score: number; label: string; color: string; verdict: string };
+        afterScore: { score: number; label: string; color: string; verdict: string };
+        improvement: number;
+        improvementPercent: string;
+        fixedCount: number;
+        remainingCount: number;
+        beforeCounts: { critical: number; high: number; medium: number; low: number; total: number };
+        afterCounts: { critical: number; high: number; medium: number; low: number; total: number };
+        testResults: Array<{ issue: string; severity: string; file: string; status: string; note: string }>;
+        remainingCritical: Array<{ name: string; file: string; severity: string; note: string }>;
+        scoreDeltaChart: Array<{ label: string; score: number; fill: string }>;
+        passed: boolean;
+        summary: string;
+    };
+    report: {
+        agentName: string;
+        status: string;
+        model: string;
+        verdict: string;
+        verdictColor: string;
+        passed: boolean;
+        markdown: string;
+        tokensUsed: number;
+    };
+}
+
+export async function runAgentPipeline(
+    report: ScanReport,
+    openaiKey?: string,
+    provider: 'openai' | 'ollama' = 'openai',
+    ollamaModel: string = 'llama3.2',
+    ollamaBase: string = 'http://localhost:11434/v1',
+    customPrompt: string = '',
+): Promise<PipelineResult> {
+    const response = await axios.post<PipelineResult>(
+        `${API_BASE}/agents/run`,
+        { report, openaiKey, provider, ollamaModel, ollamaBase, customPrompt },
+        { headers: { 'Content-Type': 'application/json' }, timeout: 300000 }
+    );
     return response.data;
 }

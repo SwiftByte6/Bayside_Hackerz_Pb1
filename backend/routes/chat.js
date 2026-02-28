@@ -6,7 +6,11 @@ const router = express.Router();
 
 // Helper to interact with Ollama
 async function callOllama(messages, model, baseUrl, systemPrompt) {
-    const url = `${baseUrl || 'http://localhost:11434/v1'}/chat/completions`;
+    // If the frontend passed a '/v1' URL for compatibility, strip it for native Ollama API
+    let base = baseUrl || 'http://127.0.0.1:11434';
+    if (base.endsWith('/v1')) base = base.replace(/\/v1$/, '');
+
+    const url = `${base}/api/chat`;
 
     // Ensure system prompt is first
     const fullMessages = [
@@ -16,17 +20,19 @@ async function callOllama(messages, model, baseUrl, systemPrompt) {
 
     try {
         const response = await axios.post(url, {
-            model: model || 'claude-3.5-sonnet', // or whatever local model user has
+            model: model || 'qwen2.5-coder:3b',
             messages: fullMessages,
-            temperature: 0.7,
+            stream: false,
+            options: { temperature: 0.7 }
         }, {
             headers: { 'Content-Type': 'application/json' },
             timeout: 60000 // 60s timeout
         });
 
-        return response.data.choices[0].message.content;
+        return response.data.message.content;
     } catch (err) {
-        throw new Error(`Ollama chat failed: ${err.message}`);
+        const detail = err.response?.data ? JSON.stringify(err.response.data) : err.message;
+        throw new Error(`Ollama chat failed: ${detail} (URL: ${url})`);
     }
 }
 

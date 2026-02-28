@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs-extra');
 require('dotenv').config();
 
+const chatRouter = require('./routes/chat');
 const scanRouter = require('./routes/scan');
 const agentsRouter = require('./routes/agents');
 
@@ -21,6 +22,7 @@ fs.ensureDirSync(path.join(__dirname, 'tmp'));
 // Routes
 app.use('/api', scanRouter);
 app.use('/api/agents', agentsRouter);
+app.use('/api/chat', chatRouter);
 
 // Health check
 app.get('/health', (req, res) => {

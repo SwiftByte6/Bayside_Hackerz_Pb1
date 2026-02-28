@@ -158,3 +158,25 @@ export async function runAgentStep(step: string, payload: object): Promise<any> 
     );
     return response.data;
 }
+
+// ── Chat Function ─────────────────────────────────────────────────────────────
+export async function sendChatMessage(messages: any[], reportSummary: any, provider: string, model: string, baseUrl: string, apiKey?: string) {
+    try {
+        const payload = {
+            messages,
+            reportSummary: {
+                repoName: reportSummary?.repoName,
+                score: reportSummary?.score,
+                summary: reportSummary?.summary,
+            },
+            provider,
+            model,
+            baseUrl,
+            apiKey
+        };
+        const response = await axios.post(`${API_BASE}/chat`, payload);
+        return response.data.reply;
+    } catch (error: any) {
+        throw new Error(error.response?.data?.error || 'Failed to send chat message.');
+    }
+}

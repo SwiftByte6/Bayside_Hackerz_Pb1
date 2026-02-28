@@ -8,6 +8,8 @@ import { Shield, Github, Upload, Zap, Lock, Eye, AlertTriangle } from 'lucide-re
 import { scanZip, scanGitHub } from '@/lib/api';
 import { setReport } from '@/lib/store';
 import Hero from '@/components/Hero';
+import Pricing from '@/components/Pricing';
+
 
 type InputMode = 'zip' | 'github';
 
@@ -130,7 +132,7 @@ export default function HomePage() {
         paddingLeft: '24px',
         paddingRight: '24px',
         paddingBottom: '80px',
-        background: 'var(--bg-primary)',
+        background: ' rgba(124, 58, 237, 0.01)',
         position: 'relative',
         gap: '64px',
         flexWrap: 'wrap',
@@ -436,6 +438,7 @@ export default function HomePage() {
     </div>
   </motion.div>
 </div>
+<Pricing />
     </>
   );
 }

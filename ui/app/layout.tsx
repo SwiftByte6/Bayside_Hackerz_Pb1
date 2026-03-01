@@ -21,7 +21,7 @@ export default function RootLayout({
       <body style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         <CustomCursor />
         <Navbar />
-        <div style={{ position: 'relative', zIndex: 1, flex: 1 }}>
+        <div style={{ position: 'relative', zIndex: 1, flex: 1, backgroundColor: '#06040a' }}>
           <SecurityTicker />
           {children}
         </div>

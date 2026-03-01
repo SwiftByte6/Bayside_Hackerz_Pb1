@@ -21,6 +21,8 @@ VibeAudit is an advanced, AI-powered cybersecurity scanner designed to audit Git
 
 Built with premium SaaS aesthetics inspired by cutting-edge web design (e.g., Anima & Wondermakers), VibeAudit features a fluid, dynamic UI with scroll-triggered animations, active matrix/CRT overlays, and a live agent pipeline visualizer.
 
+🎥 **Watch the Demo:** [https://youtu.be/jw60XrbzuM0](https://youtu.be/jw60XrbzuM0)
+
 <br />
 
 ## ✨ Key Features
